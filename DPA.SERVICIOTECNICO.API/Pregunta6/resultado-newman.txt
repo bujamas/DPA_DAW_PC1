@@ -1,0 +1,121 @@
+newman
+
+PC01 - Servicio Técnico (Pregunta 6)
+
+□ TipoReparacion (controlador con DbContext)
+└ Listar tipos de reparación
+  GET http://localhost:5181/api/TipoReparacion [200 OK, 390B, 24ms]
+  √  Código de estado 200 OK
+  √  La respuesta es JSON
+  √  Devuelve un arreglo con los tipos de reparación
+  √  Cada tipo trae id, nombre y precioBase
+  √  Incluye los tres tipos de los datos iniciales (ids 1, 2 y 3)
+
+└ Crear tipo de reparación
+  POST http://localhost:5181/api/TipoReparacion [201 Created, 288B, 7ms]
+  √  Código de estado 201 Created
+  √  El tipo creado trae su id y los datos enviados
+  √  La cabecera Location apunta al nuevo tipo
+
+└ Obtener tipo de reparación por id
+  GET http://localhost:5181/api/TipoReparacion/6 [200 OK, 229B, 5ms]
+  √  Código de estado 200 OK
+  √  Devuelve el tipo recién creado
+
+└ Actualizar tipo de reparación
+  PUT http://localhost:5181/api/TipoReparacion/6 [204 No Content, 81B, 4ms]
+  √  Código de estado 204 No Content
+  √  La respuesta no trae cuerpo
+
+└ Obtener tipo de reparación actualizado
+  GET http://localhost:5181/api/TipoReparacion/6 [200 OK, 235B, 4ms]
+  √  Código de estado 200 OK
+  √  El nombre y el precio base muestran el cambio
+
+└ Eliminar tipo de reparación
+  DELETE http://localhost:5181/api/TipoReparacion/6 [204 No Content, 81B, 6ms]
+  √  Código de estado 204 No Content
+  √  La respuesta no trae cuerpo
+
+└ Obtener tipo de reparación eliminado (404)
+  GET http://localhost:5181/api/TipoReparacion/6 [404 Not Found, 325B, 4ms]
+  √  Código de estado 404 Not Found
+  √  Ya no devuelve los datos del tipo eliminado
+
+□ OrdenReparacion (controlador con repositorio)
+└ Listar órdenes de reparación
+  GET http://localhost:5181/api/OrdenReparacion [200 OK, 678B, 3ms]
+  √  Código de estado 200 OK
+  √  La respuesta es JSON
+  √  Devuelve un arreglo con las órdenes de reparación
+  √  Cada orden trae los campos del contrato
+  √  El equipo y el tipo de reparación vienen como texto
+  √  Cada estado es uno de los permitidos
+  √  La orden inicial 1 muestra su equipo y su tipo de reparación
+
+└ Crear orden de reparación
+  POST http://localhost:5181/api/OrdenReparacion [201 Created, 443B, 7ms]
+  √  Código de estado 201 Created
+  √  La orden creada trae su id y los datos enviados
+  √  La fecha de ingreso es la de hoy (no se envió en el cuerpo)
+  √  La cabecera Location apunta a la nueva orden
+
+└ Obtener orden de reparación por id
+  GET http://localhost:5181/api/OrdenReparacion/6 [200 OK, 383B, 3ms]
+  √  Código de estado 200 OK
+  √  Devuelve la orden recién creada
+  √  Muestra el equipo y el tipo de reparación por su nombre
+
+└ Actualizar orden de reparación
+  PUT http://localhost:5181/api/OrdenReparacion/6 [200 OK, 412B, 7ms]
+  √  Código de estado 200 OK
+  √  Devuelve la orden con los cambios
+
+└ Obtener orden de reparación actualizada
+  GET http://localhost:5181/api/OrdenReparacion/6 [200 OK, 412B, 3ms]
+  √  Código de estado 200 OK
+  √  La descripción, el costo y el estado muestran el cambio
+  √  Se mantienen el equipo y el tipo de reparación
+  √  La fecha de ingreso sigue siendo la de hoy (el PUT no la envía)
+
+└ Eliminar orden de reparación
+  DELETE http://localhost:5181/api/OrdenReparacion/6 [204 No Content, 81B, 4ms]
+  √  Código de estado 204 No Content
+  √  La respuesta no trae cuerpo
+
+└ Obtener orden de reparación eliminada (404)
+  GET http://localhost:5181/api/OrdenReparacion/6 [404 Not Found, 325B, 3ms]
+  √  Código de estado 404 Not Found
+  √  Ya no devuelve los datos de la orden eliminada
+
+└ Crear orden con equipo inexistente (400)
+  POST http://localhost:5181/api/OrdenReparacion [400 Bad Request, 204B, 3ms]
+  √  Código de estado 400 Bad Request
+  √  La respuesta explica el error
+  √  El error se refiere al equipo
+
+└ Crear orden con costo negativo (400)
+  POST http://localhost:5181/api/OrdenReparacion [400 Bad Request, 429B, 3ms]
+  √  Código de estado 400 Bad Request
+  √  La respuesta explica el error
+  √  El error se refiere al costo estimado
+
+┌─────────────────────────┬─────────────────┬─────────────────┐
+│                         │        executed │          failed │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│              iterations │               1 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│                requests │              16 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│            test-scripts │              16 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│      prerequest-scripts │               0 │               0 │
+├─────────────────────────┼─────────────────┼─────────────────┤
+│              assertions │              48 │               0 │
+├─────────────────────────┴─────────────────┴─────────────────┤
+│ total run duration: 1902ms                                  │
+├─────────────────────────────────────────────────────────────┤
+│ total data received: 2.65kB (approx)                        │
+├─────────────────────────────────────────────────────────────┤
+│ average response time: 5ms [min: 3ms, max: 24ms, s.d.: 4ms] │
+└─────────────────────────────────────────────────────────────┘

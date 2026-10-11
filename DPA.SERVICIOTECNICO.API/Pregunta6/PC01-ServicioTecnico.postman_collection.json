@@ -1,0 +1,907 @@
+{
+	"info": {
+		"_postman_id": "54c02e6c-7cc6-408a-9089-db1b4aced788",
+		"name": "PC01 - Servicio Técnico (Pregunta 6)",
+		"description": "Pruebas de la Web API del servicio técnico de equipos electrónicos (DPA.SERVICIOTECNICO.API, ASP.NET Core 10) para la Pregunta 6 de la PC01 de Desarrollo de Ambiente Web.\n\nPrueba los dos controladores con GET, POST, PUT y DELETE:\n- **TipoReparacion**: controlador que usa el DbContext inyectado (Pregunta 4).\n- **OrdenReparacion**: controlador que usa un servicio y un repositorio (Pregunta 5).\n\nAntes de correrla hay que levantar la API con el perfil http (http://localhost:5181) y tener creada la base ServicioTecnicoDB con su script, que trae los datos iniciales.\n\nLos pedidos se corren en orden, con Run collection o con newman. Cada carpeta crea su propio registro, lo consulta, lo actualiza, comprueba el cambio, lo elimina y verifica que ya no existe, así que la colección se puede correr varias veces seguidas sin dejar datos de prueba. El id que devuelve cada POST queda en las variables tipoReparacionId y ordenReparacionId.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "TipoReparacion (controlador con DbContext)",
+			"item": [
+				{
+					"name": "Listar tipos de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"La respuesta es JSON\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+									"});",
+									"",
+									"pm.test(\"Devuelve un arreglo con los tipos de reparación\", function () {",
+									"    pm.expect(pm.response.json()).to.be.an(\"array\").that.is.not.empty;",
+									"});",
+									"",
+									"pm.test(\"Cada tipo trae id, nombre y precioBase\", function () {",
+									"    pm.response.json().forEach(function (tipo) {",
+									"        pm.expect(tipo).to.include.all.keys(\"id\", \"nombre\", \"precioBase\");",
+									"        pm.expect(tipo.id).to.be.a(\"number\");",
+									"        pm.expect(tipo.nombre).to.be.a(\"string\").that.is.not.empty;",
+									"        pm.expect(tipo.precioBase).to.be.a(\"number\").that.is.at.least(0);",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Incluye los tres tipos de los datos iniciales (ids 1, 2 y 3)\", function () {",
+									"    const ids = pm.response.json().map(function (tipo) { return tipo.id; });",
+									"    pm.expect(ids).to.include.members([1, 2, 3]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/TipoReparacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"TipoReparacion"
+							]
+						},
+						"description": "Pide todos los tipos de reparación. Comprueba que responde 200 con un arreglo JSON, que cada tipo trae id, nombre y precioBase y que están los tres tipos de los datos iniciales."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear tipo de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"El tipo creado trae su id y los datos enviados\", function () {",
+									"    const tipo = pm.response.json();",
+									"    pm.expect(tipo.id).to.be.a(\"number\").that.is.above(0);",
+									"    pm.expect(tipo.nombre).to.eql(\"Reparación de placa\");",
+									"    pm.expect(tipo.precioBase).to.eql(250);",
+									"});",
+									"",
+									"pm.test(\"La cabecera Location apunta al nuevo tipo\", function () {",
+									"    pm.response.to.have.header(\"Location\");",
+									"    const tipo = pm.response.json();",
+									"    const location = pm.response.headers.get(\"Location\").toLowerCase();",
+									"    pm.expect(location).to.match(new RegExp(\"/api/tiporeparacion/\" + tipo.id + \"$\"));",
+									"});",
+									"",
+									"// Guarda el id del tipo creado para los pedidos siguientes de esta carpeta.",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"tipoReparacionId\", pm.response.json().id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"Reparación de placa\",\n    \"precioBase\": 250.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/TipoReparacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"TipoReparacion"
+							]
+						},
+						"description": "Registra el tipo «Reparación de placa» con un precio base de 250.00. Comprueba que responde 201 con el tipo creado, su id nuevo y la cabecera Location, y guarda ese id en la variable tipoReparacionId para los pedidos siguientes."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener tipo de reparación por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Devuelve el tipo recién creado\", function () {",
+									"    const tipo = pm.response.json();",
+									"    pm.expect(tipo.id).to.eql(Number(pm.collectionVariables.get(\"tipoReparacionId\")));",
+									"    pm.expect(tipo.nombre).to.eql(\"Reparación de placa\");",
+									"    pm.expect(tipo.precioBase).to.eql(250);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/TipoReparacion/{{tipoReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"TipoReparacion",
+								"{{tipoReparacionId}}"
+							]
+						},
+						"description": "Consulta el tipo recién creado por su id. Comprueba que responde 200 con el mismo nombre y el mismo precio base."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar tipo de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 204 No Content\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"La respuesta no trae cuerpo\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": {{tipoReparacionId}},\n    \"nombre\": \"Reparación de placa madre\",\n    \"precioBase\": 260.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/TipoReparacion/{{tipoReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"TipoReparacion",
+								"{{tipoReparacionId}}"
+							]
+						},
+						"description": "Cambia el nombre a «Reparación de placa madre» y el precio base a 260.00; el id del cuerpo es el mismo de la ruta. Comprueba que responde 204 sin cuerpo."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener tipo de reparación actualizado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"El nombre y el precio base muestran el cambio\", function () {",
+									"    const tipo = pm.response.json();",
+									"    pm.expect(tipo.id).to.eql(Number(pm.collectionVariables.get(\"tipoReparacionId\")));",
+									"    pm.expect(tipo.nombre).to.eql(\"Reparación de placa madre\");",
+									"    pm.expect(tipo.precioBase).to.eql(260);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/TipoReparacion/{{tipoReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"TipoReparacion",
+								"{{tipoReparacionId}}"
+							]
+						},
+						"description": "Vuelve a consultar el tipo para confirmar que el cambio del PUT quedó guardado en la base."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar tipo de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 204 No Content\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"La respuesta no trae cuerpo\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/TipoReparacion/{{tipoReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"TipoReparacion",
+								"{{tipoReparacionId}}"
+							]
+						},
+						"description": "Elimina el tipo que creó esta carpeta. Comprueba que responde 204 sin cuerpo."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener tipo de reparación eliminado (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Ya no devuelve los datos del tipo eliminado\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include(\"Reparación de placa madre\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/TipoReparacion/{{tipoReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"TipoReparacion",
+								"{{tipoReparacionId}}"
+							]
+						},
+						"description": "Consulta otra vez el tipo eliminado. Comprueba que responde 404 porque ya no existe."
+					},
+					"response": []
+				}
+			],
+			"description": "Controlador TipoReparacionController, que trabaja directamente con el DbContext inyectado (Pregunta 4).\n\nRecorre el ciclo completo de un tipo de reparación: lista los tipos, crea «Reparación de placa», lo consulta, lo actualiza, comprueba el cambio, lo elimina y confirma que ya no existe (404)."
+		},
+		{
+			"name": "OrdenReparacion (controlador con repositorio)",
+			"item": [
+				{
+					"name": "Listar órdenes de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const camposDelContrato = [\"id\", \"fechaIngreso\", \"descripcionProblema\", \"costoEstimado\", \"estado\",",
+									"    \"equipoId\", \"equipo\", \"tipoReparacionId\", \"tipoReparacion\"];",
+									"const estadosPermitidos = [\"Pendiente\", \"En proceso\", \"Reparado\", \"Entregado\", \"Cancelado\"];",
+									"",
+									"pm.test(\"Código de estado 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"La respuesta es JSON\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+									"});",
+									"",
+									"pm.test(\"Devuelve un arreglo con las órdenes de reparación\", function () {",
+									"    pm.expect(pm.response.json()).to.be.an(\"array\").that.is.not.empty;",
+									"});",
+									"",
+									"pm.test(\"Cada orden trae los campos del contrato\", function () {",
+									"    pm.response.json().forEach(function (orden) {",
+									"        pm.expect(orden).to.include.all.keys(camposDelContrato);",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"El equipo y el tipo de reparación vienen como texto\", function () {",
+									"    pm.response.json().forEach(function (orden) {",
+									"        pm.expect(orden.equipo).to.be.a(\"string\").that.is.not.empty;",
+									"        pm.expect(orden.tipoReparacion).to.be.a(\"string\").that.is.not.empty;",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Cada estado es uno de los permitidos\", function () {",
+									"    pm.response.json().forEach(function (orden) {",
+									"        pm.expect(estadosPermitidos).to.include(orden.estado);",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"La orden inicial 1 muestra su equipo y su tipo de reparación\", function () {",
+									"    const orden = pm.response.json().find(function (o) { return o.id === 1; });",
+									"    pm.expect(orden, \"no está la orden 1 de los datos iniciales\").to.exist;",
+									"    pm.expect(orden.equipo).to.eql(\"Samsung Galaxy A54 (SN-A1001)\");",
+									"    pm.expect(orden.tipoReparacion).to.eql(\"Cambio de pantalla\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion"
+							]
+						},
+						"description": "Pide todas las órdenes. Comprueba que responde 200 con un arreglo JSON, que cada orden trae los campos del contrato, que el equipo y el tipo de reparación vienen como texto, que el estado es uno de los permitidos y que la orden 1 de los datos iniciales muestra «Samsung Galaxy A54 (SN-A1001)» y «Cambio de pantalla»."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear orden de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"La orden creada trae su id y los datos enviados\", function () {",
+									"    const orden = pm.response.json();",
+									"    pm.expect(orden.id).to.be.a(\"number\").that.is.above(0);",
+									"    pm.expect(orden.descripcionProblema).to.eql(\"No enciende\");",
+									"    pm.expect(orden.costoEstimado).to.eql(120);",
+									"    pm.expect(orden.estado).to.eql(\"Pendiente\");",
+									"    pm.expect(orden.equipoId).to.eql(3);",
+									"    pm.expect(orden.tipoReparacionId).to.eql(2);",
+									"});",
+									"",
+									"pm.test(\"La fecha de ingreso es la de hoy (no se envió en el cuerpo)\", function () {",
+									"    const orden = pm.response.json();",
+									"    const ahora = new Date();",
+									"    const dosCifras = function (n) { return String(n).padStart(2, \"0\"); };",
+									"    const hoyLocal = ahora.getFullYear() + \"-\" + dosCifras(ahora.getMonth() + 1) + \"-\" + dosCifras(ahora.getDate());",
+									"    const hoyUtc = ahora.toISOString().substring(0, 10);",
+									"    pm.expect([hoyLocal, hoyUtc]).to.include(String(orden.fechaIngreso).substring(0, 10));",
+									"});",
+									"",
+									"pm.test(\"La cabecera Location apunta a la nueva orden\", function () {",
+									"    pm.response.to.have.header(\"Location\");",
+									"    const orden = pm.response.json();",
+									"    const location = pm.response.headers.get(\"Location\").toLowerCase();",
+									"    pm.expect(location).to.match(new RegExp(\"/api/ordenreparacion/\" + orden.id + \"$\"));",
+									"});",
+									"",
+									"// Guarda el id de la orden creada para los pedidos siguientes de esta carpeta.",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set(\"ordenReparacionId\", pm.response.json().id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"descripcionProblema\": \"No enciende\",\n    \"costoEstimado\": 120.00,\n    \"estado\": \"Pendiente\",\n    \"equipoId\": 3,\n    \"tipoReparacionId\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion"
+							]
+						},
+						"description": "Registra una orden para el equipo 3 (Apple iPhone 13) con el tipo 2 (Cambio de batería), sin enviar la fecha de ingreso. Comprueba que responde 201 con la orden creada, su id nuevo, la fecha de hoy y la cabecera Location, y guarda el id en la variable ordenReparacionId para los pedidos siguientes."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener orden de reparación por id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Devuelve la orden recién creada\", function () {",
+									"    const orden = pm.response.json();",
+									"    pm.expect(orden.id).to.eql(Number(pm.collectionVariables.get(\"ordenReparacionId\")));",
+									"    pm.expect(orden.descripcionProblema).to.eql(\"No enciende\");",
+									"    pm.expect(orden.costoEstimado).to.eql(120);",
+									"    pm.expect(orden.estado).to.eql(\"Pendiente\");",
+									"    pm.expect(orden.equipoId).to.eql(3);",
+									"    pm.expect(orden.tipoReparacionId).to.eql(2);",
+									"});",
+									"",
+									"pm.test(\"Muestra el equipo y el tipo de reparación por su nombre\", function () {",
+									"    const orden = pm.response.json();",
+									"    pm.expect(orden.equipo).to.eql(\"Apple iPhone 13 (SN-C3003)\");",
+									"    pm.expect(orden.tipoReparacion).to.eql(\"Cambio de batería\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion/{{ordenReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion",
+								"{{ordenReparacionId}}"
+							]
+						},
+						"description": "Consulta la orden recién creada por su id. Comprueba que responde 200 con los mismos datos y que el equipo y el tipo de reparación vienen por su nombre."
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar orden de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Devuelve la orden con los cambios\", function () {",
+									"    const orden = pm.response.json();",
+									"    pm.expect(orden.id).to.eql(Number(pm.collectionVariables.get(\"ordenReparacionId\")));",
+									"    pm.expect(orden.descripcionProblema).to.eql(\"No enciende, falla el conector de carga\");",
+									"    pm.expect(orden.costoEstimado).to.eql(140);",
+									"    pm.expect(orden.estado).to.eql(\"En proceso\");",
+									"    pm.expect(orden.equipoId).to.eql(3);",
+									"    pm.expect(orden.tipoReparacionId).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": {{ordenReparacionId}},\n    \"descripcionProblema\": \"No enciende, falla el conector de carga\",\n    \"costoEstimado\": 140.00,\n    \"estado\": \"En proceso\",\n    \"equipoId\": 3,\n    \"tipoReparacionId\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion/{{ordenReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion",
+								"{{ordenReparacionId}}"
+							]
+						},
+						"description": "Cambia la descripción, sube el costo estimado a 140.00 y pasa la orden a «En proceso»; el id del cuerpo es el mismo de la ruta. Comprueba que responde 200 con la orden ya actualizada."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener orden de reparación actualizada",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"La descripción, el costo y el estado muestran el cambio\", function () {",
+									"    const orden = pm.response.json();",
+									"    pm.expect(orden.id).to.eql(Number(pm.collectionVariables.get(\"ordenReparacionId\")));",
+									"    pm.expect(orden.descripcionProblema).to.eql(\"No enciende, falla el conector de carga\");",
+									"    pm.expect(orden.costoEstimado).to.eql(140);",
+									"    pm.expect(orden.estado).to.eql(\"En proceso\");",
+									"});",
+									"",
+									"pm.test(\"Se mantienen el equipo y el tipo de reparación\", function () {",
+									"    const orden = pm.response.json();",
+									"    pm.expect(orden.equipoId).to.eql(3);",
+									"    pm.expect(orden.equipo).to.eql(\"Apple iPhone 13 (SN-C3003)\");",
+									"    pm.expect(orden.tipoReparacionId).to.eql(2);",
+									"    pm.expect(orden.tipoReparacion).to.eql(\"Cambio de batería\");",
+									"});",
+									"",
+									"pm.test(\"La fecha de ingreso sigue siendo la de hoy (el PUT no la envía)\", function () {",
+									"    const orden = pm.response.json();",
+									"    const ahora = new Date();",
+									"    const dosCifras = function (n) { return String(n).padStart(2, \"0\"); };",
+									"    const hoyLocal = ahora.getFullYear() + \"-\" + dosCifras(ahora.getMonth() + 1) + \"-\" + dosCifras(ahora.getDate());",
+									"    const hoyUtc = ahora.toISOString().substring(0, 10);",
+									"    pm.expect([hoyLocal, hoyUtc]).to.include(String(orden.fechaIngreso).substring(0, 10));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion/{{ordenReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion",
+								"{{ordenReparacionId}}"
+							]
+						},
+						"description": "Vuelve a consultar la orden para confirmar que el cambio quedó guardado y que el equipo, el tipo de reparación y la fecha de ingreso siguen iguales."
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar orden de reparación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 204 No Content\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"pm.test(\"La respuesta no trae cuerpo\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion/{{ordenReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion",
+								"{{ordenReparacionId}}"
+							]
+						},
+						"description": "Elimina la orden que creó esta carpeta. Comprueba que responde 204 sin cuerpo."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener orden de reparación eliminada (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Ya no devuelve los datos de la orden eliminada\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include(\"No enciende, falla el conector de carga\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion/{{ordenReparacionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion",
+								"{{ordenReparacionId}}"
+							]
+						},
+						"description": "Consulta otra vez la orden eliminada. Comprueba que responde 404 porque ya no existe."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear orden con equipo inexistente (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Junta el texto del error, venga como ProblemDetails (errors por campo), como objeto con un mensaje o como texto plano.",
+									"function textoDelError() {",
+									"    const texto = pm.response.text();",
+									"    let cuerpo;",
+									"    try { cuerpo = JSON.parse(texto); } catch (e) { return texto.trim(); }",
+									"    if (cuerpo === null || typeof cuerpo !== \"object\") { return String(cuerpo).trim(); }",
+									"    const partes = [];",
+									"    Object.keys(cuerpo.errors || {}).forEach(function (nombreCampo) {",
+									"        partes.push(nombreCampo, [].concat(cuerpo.errors[nombreCampo]).join(\" \"));",
+									"    });",
+									"    [\"detail\", \"title\", \"mensaje\", \"message\"].forEach(function (clave) {",
+									"        if (typeof cuerpo[clave] === \"string\") { partes.push(cuerpo[clave]); }",
+									"    });",
+									"    return partes.join(\" \").trim();",
+									"}",
+									"",
+									"pm.test(\"La respuesta explica el error\", function () {",
+									"    pm.expect(textoDelError(), \"la respuesta no trae un mensaje de error\").to.not.be.empty;",
+									"});",
+									"",
+									"pm.test(\"El error se refiere al equipo\", function () {",
+									"    pm.expect(textoDelError().toLowerCase()).to.include(\"equipo\");",
+									"});",
+									"",
+									"// Si la API aceptara la orden por error, se borra para que la corrida no deje datos de prueba.",
+									"if (pm.response.code === 201) {",
+									"    pm.sendRequest({",
+									"        url: pm.variables.get(\"baseUrl\") + \"/api/OrdenReparacion/\" + pm.response.json().id,",
+									"        method: \"DELETE\"",
+									"    }, function () {});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"descripcionProblema\": \"Pantalla con líneas verticales\",\n    \"costoEstimado\": 100.00,\n    \"estado\": \"Pendiente\",\n    \"equipoId\": 99999,\n    \"tipoReparacionId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion"
+							]
+						},
+						"description": "Intenta registrar una orden para el equipo 99999, que no existe; el resto de los datos es válido. La API debe rechazarla con 400 y decir que el problema es el equipo. Si por error la aceptara, el script la borra para no dejar datos de prueba."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear orden con costo negativo (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Código de estado 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Junta el texto del error, venga como ProblemDetails (errors por campo), como objeto con un mensaje o como texto plano.",
+									"function textoDelError() {",
+									"    const texto = pm.response.text();",
+									"    let cuerpo;",
+									"    try { cuerpo = JSON.parse(texto); } catch (e) { return texto.trim(); }",
+									"    if (cuerpo === null || typeof cuerpo !== \"object\") { return String(cuerpo).trim(); }",
+									"    const partes = [];",
+									"    Object.keys(cuerpo.errors || {}).forEach(function (nombreCampo) {",
+									"        partes.push(nombreCampo, [].concat(cuerpo.errors[nombreCampo]).join(\" \"));",
+									"    });",
+									"    [\"detail\", \"title\", \"mensaje\", \"message\"].forEach(function (clave) {",
+									"        if (typeof cuerpo[clave] === \"string\") { partes.push(cuerpo[clave]); }",
+									"    });",
+									"    return partes.join(\" \").trim();",
+									"}",
+									"",
+									"pm.test(\"La respuesta explica el error\", function () {",
+									"    pm.expect(textoDelError(), \"la respuesta no trae un mensaje de error\").to.not.be.empty;",
+									"});",
+									"",
+									"pm.test(\"El error se refiere al costo estimado\", function () {",
+									"    pm.expect(textoDelError().toLowerCase()).to.include(\"costo\");",
+									"});",
+									"",
+									"// Si la API aceptara la orden por error, se borra para que la corrida no deje datos de prueba.",
+									"if (pm.response.code === 201) {",
+									"    pm.sendRequest({",
+									"        url: pm.variables.get(\"baseUrl\") + \"/api/OrdenReparacion/\" + pm.response.json().id,",
+									"        method: \"DELETE\"",
+									"    }, function () {});",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"descripcionProblema\": \"Batería hinchada\",\n    \"costoEstimado\": -50.00,\n    \"estado\": \"Pendiente\",\n    \"equipoId\": 3,\n    \"tipoReparacionId\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/OrdenReparacion",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"OrdenReparacion"
+							]
+						},
+						"description": "Intenta registrar una orden con un costo estimado negativo (-50.00); el resto de los datos es válido. La API debe rechazarla con 400 y decir que el problema es el costo. Si por error la aceptara, el script la borra para no dejar datos de prueba."
+					},
+					"response": []
+				}
+			],
+			"description": "Controlador OrdenReparacionController, que delega en un servicio y un repositorio (Pregunta 5).\n\nRecorre el mismo ciclo con una orden para el equipo 3 (Apple iPhone 13) y el tipo 2 (Cambio de batería) de los datos iniciales, y termina con dos pedidos que la API debe rechazar con 400: un equipo que no existe y un costo estimado negativo."
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5181",
+			"type": "string",
+			"description": "Dirección de la API (perfil http de launchSettings)."
+		},
+		{
+			"key": "tipoReparacionId",
+			"value": "",
+			"type": "string",
+			"description": "Id del tipo de reparación que crea el POST de la primera carpeta."
+		},
+		{
+			"key": "ordenReparacionId",
+			"value": "",
+			"type": "string",
+			"description": "Id de la orden de reparación que crea el POST de la segunda carpeta."
+		}
+	]
+}
