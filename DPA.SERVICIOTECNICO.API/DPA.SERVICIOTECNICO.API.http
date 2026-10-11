@@ -1,0 +1,11 @@
+@DPA.SERVICIOTECNICO.API_HostAddress = http://localhost:5181
+
+GET {{DPA.SERVICIOTECNICO.API_HostAddress}}/api/TipoReparacion
+Accept: application/json
+
+###
+
+GET {{DPA.SERVICIOTECNICO.API_HostAddress}}/api/OrdenReparacion
+Accept: application/json
+
+###
