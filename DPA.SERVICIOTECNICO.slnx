@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DPA.SERVICIOTECNICO.API/DPA.SERVICIOTECNICO.API.csproj" />
+  <Project Path="DPA.SERVICIOTECNICO.CORE/DPA.SERVICIOTECNICO.CORE.csproj" />
+</Solution>
